@@ -20,7 +20,7 @@ if not exist .env (
   echo Creating .env from template...
   copy NUL .env >nul
   echo DATABASE_URL=postgresql://luxe:luxe_secret@db:5432/luxe_collective > .env
-  echo SECRET_KEY=dev-key-change-me-in-production >> .env
+  echo SECRET_KEY=change-me-local-demo-only >> .env
   echo ALGORITHM=HS256 >> .env
   echo ACCESS_TOKEN_EXPIRE_MINUTES=30 >> .env
   echo GENAI_API_KEY= >> .env
@@ -29,6 +29,7 @@ if not exist .env (
   echo ALLOWED_HOSTS=localhost,127.0.0.1,api >> .env
   echo.
   echo .env created. PLEASE EDIT IT NOW TO ADD YOUR GENAI_API_KEY!
+  echo NOTE: Demo defaults are for local use only. Update DATABASE_URL and SECRET_KEY for non-local usage.
   echo.
   notepad .env
   echo.
