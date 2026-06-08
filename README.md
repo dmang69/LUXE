@@ -154,6 +154,7 @@ pytest test_application.py -v
 - Role-based access control (customer / admin / vendor)
 - Boss task submission/status endpoints require authenticated staff users
 - Production startup now requires an explicit `SECRET_KEY`
+- Specialized agent clients can use `BOSS_API_TOKEN` for Boss API authentication
 - SQLAlchemy ORM prevents SQL injection
 - Pydantic input validation
 - CORS is configurable via `CORS_ORIGINS` and should be restricted in production

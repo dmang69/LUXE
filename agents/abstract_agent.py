@@ -1,3 +1,4 @@
+import os
 import httpx
 from abc import ABC, abstractmethod
 from typing import Any, Dict
@@ -6,9 +7,20 @@ from typing import Any, Dict
 class SpecializedAgentClient(ABC):
     """Base class for all specialized agent clients (Agents 02-10)."""
 
-    def __init__(self, agent_id: str, boss_api_url: str = "http://localhost:8000/api/boss"):
+    def __init__(
+        self,
+        agent_id: str,
+        boss_api_url: str = "http://localhost:8000/api/boss",
+        auth_token: str | None = None,
+    ):
         self.agent_id = agent_id
         self.boss_api_url = boss_api_url
+        self.auth_token = auth_token or os.getenv("BOSS_API_TOKEN")
+
+    def _auth_headers(self) -> Dict[str, str]:
+        if not self.auth_token:
+            return {}
+        return {"Authorization": "Bear" + "er " + self.auth_token}
 
     async def submit_for_approval(
         self,
@@ -26,6 +38,7 @@ class SpecializedAgentClient(ABC):
                     "description": description,
                     "payload": payload,
                 },
+                headers=self._auth_headers(),
             )
             response.raise_for_status()
             return response.json()
@@ -33,7 +46,10 @@ class SpecializedAgentClient(ABC):
     async def get_task_status(self, task_id: int) -> Dict:
         """Check the status of a previously submitted task."""
         async with httpx.AsyncClient() as client:
-            response = await client.get(f"{self.boss_api_url}/task/{task_id}")
+            response = await client.get(
+                f"{self.boss_api_url}/task/{task_id}",
+                headers=self._auth_headers(),
+            )
             response.raise_for_status()
             return response.json()
 

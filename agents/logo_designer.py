@@ -24,8 +24,12 @@ _PALETTES: Dict[str, List[str]] = {
 class AncientSymbolLogoDesigner(SpecializedAgentClient):
     """Agent 02 – Logo designer specialising in ancient cultural symbolism."""
 
-    def __init__(self, boss_api_url: str = "http://localhost:8000/api/boss"):
-        super().__init__("02", boss_api_url)
+    def __init__(
+        self,
+        boss_api_url: str = "http://localhost:8000/api/boss",
+        auth_token: str | None = None,
+    ):
+        super().__init__("02", boss_api_url, auth_token=auth_token)
 
     async def create_work(self, **kwargs) -> Dict:
         return await self.generate_logo_variations(**kwargs)
