@@ -11,8 +11,8 @@ import streamlit as st
 # ─── Config ───────────────────────────────────────────────────────────────────
 
 API_BASE = os.getenv("API_BASE_URL", "http://localhost:8000")
-ADMIN_EMAIL = os.getenv("DASHBOARD_ADMIN_EMAIL", "admin@luxecollective.com")
-ADMIN_PASSWORD = os.getenv("DASHBOARD_ADMIN_PASSWORD", "admin_password")
+ADMIN_EMAIL = os.getenv("DASHBOARD_ADMIN_EMAIL", "")
+ADMIN_PASSWORD = os.getenv("DASHBOARD_ADMIN_PASSWORD", "")
 
 st.set_page_config(
     page_title="LUXE COLLECTIVE Command Center",

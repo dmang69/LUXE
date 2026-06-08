@@ -188,7 +188,7 @@ def get_sales_summary(
         .scalar() or 0
     )
 
-    visitors_today = 1200  # replace with real analytics tracker
+    visitors_today = 1200  # TODO: replace with real analytics tracker when available
     orders_today = (
         db.query(func.count(Order.id))
         .filter(func.date(Order.created_at) == today)
@@ -214,7 +214,7 @@ def get_sales_summary(
     top_units = int(top_product[1]) if top_product else 0
     top_revenue = float(top_product[2]) if top_product else 0
 
-    roas = 4.2  # replace with actual ad spend calculation
+    roas = 4.2  # TODO: replace with actual ad spend calculation when ad data is available
 
     return {
         "revenue_today": round(float(today_revenue), 2),
@@ -256,7 +256,7 @@ def get_top_products(
             "SKU": f"SKU-{r.sku:03d}",
             "Units": int(r.units),
             "Revenue": f"${float(r.revenue):.2f}",
-            "Margin": "~70%",
+            "Margin": "~70%",  # TODO: replace with actual margin calculation
         }
         for idx, r in enumerate(rows)
     ]
@@ -283,7 +283,7 @@ def get_sales_trend(
     )
     date_rev = {row.day: float(row.revenue) for row in daily}
     labels = [(start + timedelta(days=i)).strftime("%m/%d") for i in range(days)]
-    values = [date_rev.get(str(start + timedelta(days=i)), 0.0) for i in range(days)]
+    values = [date_rev.get(start + timedelta(days=i), 0.0) for i in range(days)]
     return {"labels": labels, "values": values}
 
 
