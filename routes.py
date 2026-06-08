@@ -16,7 +16,7 @@ from boss_agent_service import boss_agent_service
 from workers.task_executor import TaskExecutor
 
 
-def _utcnow() -> datetime:
+def _naive_utcnow() -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
@@ -248,7 +248,7 @@ def create_order(
         (item.product.discount_price or item.product.price) * item.quantity
         for item in cart_items
     )
-    order_number = f"LC-{_utcnow().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+    order_number = f"LC-{_naive_utcnow().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
     order = models.Order(
         user_id=current_user.id,
         order_number=order_number,

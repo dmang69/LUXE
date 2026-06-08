@@ -20,7 +20,7 @@ class SpecializedAgentClient(ABC):
     def _auth_headers(self) -> Dict[str, str]:
         if not self.auth_token:
             return {}
-        return {"Authorization": "Bear" + "er " + self.auth_token}
+        return {"Authorization": f"Bearer {self.auth_token}"}
 
     async def submit_for_approval(
         self,

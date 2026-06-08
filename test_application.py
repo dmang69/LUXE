@@ -78,7 +78,7 @@ def login_user(client, suffix=""):
     )
 
 
-_SCHEME = "Bear" + "er"
+_SCHEME = "Bearer"
 
 
 def _auth_header(token: str) -> dict:

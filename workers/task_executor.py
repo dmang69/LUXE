@@ -12,7 +12,7 @@ from boss_agent_service import boss_agent_service
 logger = logging.getLogger(__name__)
 
 
-def _utcnow() -> datetime:
+def _naive_utcnow() -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
 
 
@@ -81,7 +81,7 @@ class TaskExecutor:
             "logo_variations": payload.get("variations", []),
             "style_guide": payload.get("style_guide", {}),
             "production_ready": True,
-            "completed_at": _utcnow().isoformat(),
+            "completed_at": _naive_utcnow().isoformat(),
         }
 
     @staticmethod
@@ -90,7 +90,7 @@ class TaskExecutor:
             "collection_designs": payload.get("designs", []),
             "production_notes": payload.get("production_notes", []),
             "print_ready_files": True,
-            "completed_at": _utcnow().isoformat(),
+            "completed_at": _naive_utcnow().isoformat(),
         }
 
     @staticmethod
@@ -98,5 +98,5 @@ class TaskExecutor:
         return {
             "message": f"Executed {task.task_type} for agent {task.agent_id}",
             "payload": payload,
-            "completed_at": _utcnow().isoformat(),
+            "completed_at": _naive_utcnow().isoformat(),
         }

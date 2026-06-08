@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 import models
 
 
-def _utcnow() -> datetime:
+def _naive_utcnow() -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
 
 
@@ -50,7 +50,7 @@ class BossAgentService:
         if task.status != "pending":
             raise ValueError("Only pending tasks can be reviewed")
 
-        task.reviewed_at = _utcnow()
+        task.reviewed_at = _naive_utcnow()
 
         decision_upper = decision.upper().strip()
         feedback = decision.split(":", 1)[1].strip() if ":" in decision else decision
@@ -106,7 +106,7 @@ class BossAgentService:
             return None
 
         task.status = "completed" if success else "failed"
-        task.executed_at = _utcnow()
+        task.executed_at = _naive_utcnow()
 
         result = task.execution_result
         if result is None:
@@ -115,7 +115,7 @@ class BossAgentService:
         result.success = success
         result.result_data = json.dumps(result_data) if result_data is not None else None
         result.error_message = error
-        result.executed_at = _utcnow()
+        result.executed_at = _naive_utcnow()
 
         db.commit()
         db.refresh(task)
