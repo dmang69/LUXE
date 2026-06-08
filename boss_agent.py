@@ -8,7 +8,7 @@ import json
 import os
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -46,7 +46,7 @@ class AgentTask:
     payload: Dict[str, Any]
     status: TaskStatus = TaskStatus.PENDING
     priority: TaskPriority = TaskPriority.MEDIUM
-    submitted_at: datetime = field(default_factory=datetime.utcnow)
+    submitted_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     reviewed_at: Optional[datetime] = None
     feedback: Optional[str] = None
     result: Optional[Dict[str, Any]] = None
@@ -61,7 +61,7 @@ class DesignVariation:
     description: str
     color_palette: List[str]
     design_elements: List[str]
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ─── Boss Agent ───────────────────────────────────────────────────────────────
@@ -106,7 +106,7 @@ class BossAgent:
         approved, feedback = self._evaluate_task(task)
         task.status = TaskStatus.APPROVED if approved else TaskStatus.REJECTED
         task.feedback = feedback
-        task.reviewed_at = datetime.utcnow()
+        task.reviewed_at = datetime.now(timezone.utc)
 
         self.pending_tasks.remove(task)
         if approved:
@@ -153,7 +153,7 @@ class BossAgent:
             return False
         task.status = TaskStatus.APPROVED
         task.feedback = feedback
-        task.reviewed_at = datetime.utcnow()
+        task.reviewed_at = datetime.now(timezone.utc)
         self.pending_tasks.remove(task)
         self.approved_tasks.append(task)
         return True
@@ -164,7 +164,7 @@ class BossAgent:
             return False
         task.status = TaskStatus.REJECTED
         task.feedback = feedback
-        task.reviewed_at = datetime.utcnow()
+        task.reviewed_at = datetime.now(timezone.utc)
         self.pending_tasks.remove(task)
         self.rejected_tasks.append(task)
         return True
@@ -189,7 +189,7 @@ class SpecializedAgent:
         self.activity_log: List[str] = []
 
     def _log(self, message: str) -> None:
-        entry = f"[{datetime.utcnow().strftime('%H:%M:%S')}] {self.name}: {message}"
+        entry = f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] {self.name}: {message}"
         self.activity_log.append(entry)
         print(entry)
 
