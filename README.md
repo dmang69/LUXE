@@ -106,6 +106,8 @@ task_execution_results (id, task_id, success, result_data, error_message, execut
 [E-commerce platform / external services]
 ```
 
+Specialized agents must authenticate to the Boss API with a staff bearer token (for example via `BOSS_API_TOKEN`) before they can submit work or query task status.
+
 ---
 
 ## 🚀 Running the App
