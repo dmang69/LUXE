@@ -1,13 +1,14 @@
 import asyncio
 import logging
 import os
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from database import Base, engine, SessionLocal
+from database import SessionLocal, init_database
 from routes import auth_router, products_router, cart_router, orders_router, boss_router
 from workers.task_executor import TaskExecutor
 
@@ -19,8 +20,37 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ── Create tables ─────────────────────────────────────────────────────────────
-Base.metadata.create_all(bind=engine)
+
+def _parse_cors_origins() -> list[str]:
+    origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()]
+    if os.getenv("ENV", "development").lower() == "production" and "*" in origins:
+        raise RuntimeError("CORS_ORIGINS cannot include '*' when ENV=production")
+    return origins
+
+
+def _task_worker_enabled() -> bool:
+    return os.getenv("ENABLE_TASK_WORKER", "false").lower() in {"1", "true", "yes", "on"}
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    init_database()
+
+    executor: TaskExecutor | None = None
+    executor_task: asyncio.Task | None = None
+    if _task_worker_enabled():
+        executor = TaskExecutor(SessionLocal)
+        executor_task = asyncio.create_task(executor.start())
+        logger.info("TaskExecutor enabled")
+    else:
+        logger.info("TaskExecutor disabled; set ENABLE_TASK_WORKER=true to enable polling")
+
+    try:
+        yield
+    finally:
+        if executor and executor_task:
+            executor.stop()
+            await executor_task
 
 # ── Application ───────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -33,13 +63,13 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-origins = os.getenv("CORS_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=_parse_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -51,24 +81,6 @@ app.include_router(products_router)
 app.include_router(cart_router)
 app.include_router(orders_router)
 app.include_router(boss_router)
-
-# ── Background worker ─────────────────────────────────────────────────────────
-_executor: TaskExecutor | None = None
-
-
-@app.on_event("startup")
-async def startup_event():
-    global _executor
-    _executor = TaskExecutor(SessionLocal)
-    asyncio.create_task(_executor.start())
-    logger.info("Luxe Collective API started – TaskExecutor running")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    if _executor:
-        _executor.stop()
-    logger.info("Luxe Collective API shut down")
 
 
 # ── System endpoints ──────────────────────────────────────────────────────────

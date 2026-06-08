@@ -64,10 +64,10 @@ LUXE/
 ### Boss Agent
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/boss/submit` | Submit task for approval |
+| POST | `/api/boss/submit` | Submit task for approval *(vendor/admin auth required)* |
 | GET | `/api/boss/pending` | View pending tasks *(admin)* |
 | POST | `/api/boss/review/{id}` | Approve/reject task *(admin)* |
-| GET | `/api/boss/task/{id}` | Task status |
+| GET | `/api/boss/task/{id}` | Task status *(vendor/admin auth required)* |
 | POST | `/api/boss/execute/{id}` | Execute approved task *(admin)* |
 
 ### System
@@ -101,7 +101,7 @@ task_execution_results (id, task_id, success, result_data, error_message, execut
       ↓  POST /api/boss/submit
 [Boss Agent 01 – Brand Architect]
       ↓  POST /api/boss/review/{id}  (admin)
-[TaskExecutor background worker]
+[Optional TaskExecutor background worker]
       ↓  executes approved work
 [E-commerce platform / external services]
 ```
@@ -120,7 +120,7 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit DATABASE_URL, SECRET_KEY in .env
 
-# 3. Start PostgreSQL (or use docker-compose for DB only)
+# 3. Optional: point DATABASE_URL at PostgreSQL and start it
 docker-compose up db -d
 
 # 4. Run
@@ -152,9 +152,12 @@ pytest test_application.py -v
 - Bcrypt password hashing
 - JWT authentication (HS256)
 - Role-based access control (customer / admin / vendor)
+- Boss task submission/status endpoints require authenticated staff users
+- Production startup now requires an explicit `SECRET_KEY`
 - SQLAlchemy ORM prevents SQL injection
 - Pydantic input validation
-- CORS configurable via `CORS_ORIGINS` env var
+- CORS is configurable via `CORS_ORIGINS` and should be restricted in production
+- Background polling is opt-in via `ENABLE_TASK_WORKER=true`
 
 ---
 
@@ -182,6 +185,7 @@ curl -X POST http://localhost:8000/api/cart/items \
 
 # Submit an agent task for Boss approval
 curl -X POST http://localhost:8000/api/boss/submit \
+  -H "Authorization: ******" \
   -H "Content-Type: application/json" \
   -d '{"agent_id":"02","task_type":"design_concept","description":"Egyptian logo concepts","payload":{"culture":"Egyptian"}}'
 ```

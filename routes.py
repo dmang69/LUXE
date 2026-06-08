@@ -1,7 +1,7 @@
 import json
 import math
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -10,9 +10,14 @@ from sqlalchemy.orm import Session
 import models
 import schemas
 from database import get_db
-from dependencies import get_current_user, require_admin
+from dependencies import get_current_user, require_admin, require_staff_user
 from security import hash_password, verify_password, create_access_token
 from boss_agent_service import boss_agent_service
+from workers.task_executor import TaskExecutor
+
+
+def _utcnow() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -107,7 +112,7 @@ def create_product(
     db: Session = Depends(get_db),
     _: models.User = Depends(require_admin),
 ):
-    product = models.Product(**product_in.dict())
+    product = models.Product(**product_in.model_dump())
     db.add(product)
     db.commit()
     db.refresh(product)
@@ -124,9 +129,8 @@ def update_product(
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    for field, value in product_in.dict(exclude_unset=True).items():
+    for field, value in product_in.model_dump(exclude_unset=True).items():
         setattr(product, field, value)
-    product.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(product)
     return product
@@ -244,7 +248,7 @@ def create_order(
         (item.product.discount_price or item.product.price) * item.quantity
         for item in cart_items
     )
-    order_number = f"LC-{datetime.utcnow().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+    order_number = f"LC-{_utcnow().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
     order = models.Order(
         user_id=current_user.id,
         order_number=order_number,
@@ -310,7 +314,11 @@ boss_router = APIRouter(prefix="/api/boss", tags=["boss agent"])
 
 
 @boss_router.post("/submit", response_model=schemas.AgentTaskResponse, status_code=status.HTTP_201_CREATED)
-def submit_task(task_in: schemas.AgentTaskSubmit, db: Session = Depends(get_db)):
+def submit_task(
+    task_in: schemas.AgentTaskSubmit,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_staff_user),
+):
     task = boss_agent_service.submit_task(
         db=db,
         agent_id=task_in.agent_id,
@@ -329,8 +337,9 @@ def get_pending_tasks(
     tasks = boss_agent_service.get_pending_tasks(db)
     result = []
     for t in tasks:
-        data = schemas.AgentTaskDetailResponse.from_orm(t)
-        data.__dict__["payload"] = json.loads(t.payload)
+        data = schemas.AgentTaskDetailResponse.model_validate(t).model_copy(
+            update={"payload": json.loads(t.payload)}
+        )
         result.append(data)
     return result
 
@@ -342,14 +351,25 @@ def review_task(
     db: Session = Depends(get_db),
     _: models.User = Depends(require_admin),
 ):
-    task = boss_agent_service.review_task(db, task_id, review.decision)
+    try:
+        task = boss_agent_service.review_task(db, task_id, review.decision)
+    except ValueError as exc:
+        detail = str(exc)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT if "pending" in detail.lower() else status.HTTP_400_BAD_REQUEST,
+            detail=detail,
+        ) from exc
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
 
 
 @boss_router.get("/task/{task_id}", response_model=schemas.AgentTaskResponse)
-def get_task_status(task_id: int, db: Session = Depends(get_db)):
+def get_task_status(
+    task_id: int,
+    db: Session = Depends(get_db),
+    _: models.User = Depends(require_staff_user),
+):
     task = boss_agent_service.get_task(db, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -362,21 +382,17 @@ def execute_approved_task(
     db: Session = Depends(get_db),
     _: models.User = Depends(require_admin),
 ):
-    task = boss_agent_service.get_approved_task(db, task_id)
+    task = boss_agent_service.claim_task_for_execution(db, task_id)
     if not task:
-        raise HTTPException(status_code=400, detail="Task not found or not approved")
+        existing_task = boss_agent_service.get_task(db, task_id)
+        if not existing_task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        if existing_task.status in {"pending", "rejected"}:
+            raise HTTPException(status_code=400, detail="Task not approved for execution")
+        raise HTTPException(status_code=409, detail=f"Task is already {existing_task.status}")
 
-    boss_agent_service.mark_task_executing(db, task_id)
     try:
-        payload = json.loads(task.payload)
-        result = {
-            "task_id": task.id,
-            "agent_id": task.agent_id,
-            "task_type": task.task_type,
-            "output": f"Executed {task.task_type} for agent {task.agent_id}",
-            "payload": payload,
-            "completed_at": datetime.utcnow().isoformat(),
-        }
+        result = TaskExecutor.execute_task(task)
         boss_agent_service.complete_task(db, task.id, True, result)
         return {"message": "Task executed successfully", "result": result}
     except Exception as exc:

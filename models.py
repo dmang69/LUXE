@@ -1,10 +1,14 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from sqlalchemy import (
     Boolean, Column, DateTime, Float, ForeignKey,
     Integer, String, Text
 )
 from sqlalchemy.orm import relationship
 from database import Base
+
+
+def utcnow() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 class User(Base):
@@ -18,8 +22,8 @@ class User(Base):
     phone = Column(String, nullable=True)
     role = Column(String, default="customer")  # customer, admin, vendor
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     cart_items = relationship("CartItem", back_populates="user", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="user")
@@ -40,8 +44,8 @@ class Product(Base):
     material = Column(String, nullable=True)
     color = Column(String, nullable=True)
     is_featured = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     cart_items = relationship("CartItem", back_populates="product")
     order_items = relationship("OrderItem", back_populates="product")
@@ -54,7 +58,7 @@ class CartItem(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     quantity = Column(Integer, nullable=False, default=1)
-    added_at = Column(DateTime, default=datetime.utcnow)
+    added_at = Column(DateTime, default=utcnow)
 
     user = relationship("User", back_populates="cart_items")
     product = relationship("Product", back_populates="cart_items")
@@ -69,8 +73,8 @@ class Order(Base):
     total_amount = Column(Float, nullable=False)
     status = Column(String, default="pending")  # pending, confirmed, shipped, delivered, cancelled
     shipping_address = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     user = relationship("User", back_populates="orders")
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
@@ -97,7 +101,7 @@ class UserPreference(Base):
     preferred_categories = Column(Text, nullable=True)  # JSON list
     preferred_designers = Column(Text, nullable=True)   # JSON list
     style_profile = Column(Text, nullable=True)         # JSON object
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     user = relationship("User", back_populates="preferences")
 
@@ -113,7 +117,7 @@ class AgentTask(Base):
     description = Column(Text, nullable=False)
     payload = Column(Text, nullable=False)                       # JSON string
     status = Column(String, default="pending")                   # pending, approved, rejected, in_progress, completed, failed
-    submitted_at = Column(DateTime, default=datetime.utcnow)
+    submitted_at = Column(DateTime, default=utcnow)
     reviewed_at = Column(DateTime, nullable=True)
     boss_feedback = Column(Text, nullable=True)
     approved_by = Column(String, nullable=True)                  # Always "Agent_01" when approved
@@ -130,6 +134,6 @@ class TaskExecutionResult(Base):
     success = Column(Boolean, nullable=False)
     result_data = Column(Text, nullable=True)   # JSON string
     error_message = Column(Text, nullable=True)
-    executed_at = Column(DateTime, default=datetime.utcnow)
+    executed_at = Column(DateTime, default=utcnow)
 
     task = relationship("AgentTask", back_populates="execution_result")

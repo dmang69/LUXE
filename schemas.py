@@ -1,6 +1,10 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+
+class ORMModel(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ── User Schemas ──────────────────────────────────────────────────────────────
@@ -12,7 +16,8 @@ class UserCreate(BaseModel):
     phone: Optional[str] = None
     password: str = Field(..., min_length=8)
 
-    @validator("password")
+    @field_validator("password")
+    @classmethod
     def password_strength(cls, v):
         if not any(c.isupper() for c in v):
             raise ValueError("Password must contain at least one uppercase letter")
@@ -26,7 +31,7 @@ class UserLogin(BaseModel):
     password: str
 
 
-class UserResponse(BaseModel):
+class UserResponse(ORMModel):
     id: int
     email: str
     username: str
@@ -35,10 +40,6 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     created_at: datetime
-
-    class Config:
-        from_attributes = True
-
 
 class Token(BaseModel):
     access_token: str
@@ -78,7 +79,7 @@ class ProductUpdate(BaseModel):
     is_featured: Optional[bool] = None
 
 
-class ProductResponse(BaseModel):
+class ProductResponse(ORMModel):
     id: int
     name: str
     description: Optional[str]
@@ -92,10 +93,6 @@ class ProductResponse(BaseModel):
     is_featured: bool
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
-
 
 class ProductListResponse(BaseModel):
     items: List[ProductResponse]
@@ -112,16 +109,12 @@ class CartItemCreate(BaseModel):
     quantity: int = Field(1, ge=1)
 
 
-class CartItemResponse(BaseModel):
+class CartItemResponse(ORMModel):
     id: int
     product_id: int
     quantity: int
     added_at: datetime
     product: ProductResponse
-
-    class Config:
-        from_attributes = True
-
 
 class CartResponse(BaseModel):
     items: List[CartItemResponse]
@@ -135,18 +128,14 @@ class OrderCreate(BaseModel):
     shipping_address: str = Field(..., min_length=10)
 
 
-class OrderItemResponse(BaseModel):
+class OrderItemResponse(ORMModel):
     id: int
     product_id: int
     quantity: int
     price: float
     product: ProductResponse
 
-    class Config:
-        from_attributes = True
-
-
-class OrderResponse(BaseModel):
+class OrderResponse(ORMModel):
     id: int
     order_number: str
     total_amount: float
@@ -155,10 +144,6 @@ class OrderResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     items: List[OrderItemResponse]
-
-    class Config:
-        from_attributes = True
-
 
 # ── Agent Task Schemas ────────────────────────────────────────────────────────
 
@@ -172,8 +157,17 @@ class AgentTaskSubmit(BaseModel):
 class AgentTaskReview(BaseModel):
     decision: str = Field(..., description="'APPROVED: reason' or 'REJECTED: reason'")
 
+    @field_validator("decision")
+    @classmethod
+    def validate_decision(cls, value: str) -> str:
+        decision = value.strip()
+        decision_upper = decision.upper()
+        if not (decision_upper.startswith("APPROVED") or decision_upper.startswith("REJECTED")):
+            raise ValueError("Decision must start with 'APPROVED' or 'REJECTED'")
+        return decision
 
-class AgentTaskResponse(BaseModel):
+
+class AgentTaskResponse(ORMModel):
     id: int
     agent_id: str
     task_type: str
@@ -184,10 +178,6 @@ class AgentTaskResponse(BaseModel):
     boss_feedback: Optional[str]
     approved_by: Optional[str]
     executed_at: Optional[datetime]
-
-    class Config:
-        from_attributes = True
-
 
 class AgentTaskDetailResponse(AgentTaskResponse):
     payload: dict

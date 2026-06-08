@@ -5,11 +5,18 @@ Run with:
     pytest test_application.py -v
 """
 import json
+import os
 import time
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+os.environ.setdefault("ENV", "development")
+os.environ.setdefault("DATABASE_URL", "sqlite:///./app_test.db")
+os.environ.setdefault("SECRET_KEY", "test-secret-key")
+os.environ.setdefault("ENABLE_TASK_WORKER", "false")
 
 from database import Base, get_db
 from main import app
@@ -38,6 +45,7 @@ app.dependency_overrides[get_db] = override_get_db
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_database():
+    Base.metadata.drop_all(bind=test_engine)
     Base.metadata.create_all(bind=test_engine)
     yield
     Base.metadata.drop_all(bind=test_engine)
@@ -434,6 +442,7 @@ class TestBossAgent:
                 "description": "Logo designs for Egyptian collection",
                 "payload": {"culture": "Egyptian", "variations": 3},
             },
+            headers=self.admin_h,
         )
 
     def test_submit_task(self, client):
@@ -445,12 +454,39 @@ class TestBossAgent:
 
     def test_get_task_status(self, client):
         task_id = self._submit_task(client).json()["id"]
-        resp = client.get(f"/api/boss/task/{task_id}")
+        resp = client.get(f"/api/boss/task/{task_id}", headers=self.admin_h)
         assert resp.status_code == 200
 
     def test_get_task_not_found(self, client):
-        resp = client.get("/api/boss/task/999999")
+        resp = client.get("/api/boss/task/999999", headers=self.admin_h)
         assert resp.status_code == 404
+
+    def test_submit_task_requires_auth(self, client):
+        resp = client.post(
+            "/api/boss/submit",
+            json={
+                "agent_id": "02",
+                "task_type": "design_concept",
+                "description": "Logo designs for Egyptian collection",
+                "payload": {"culture": "Egyptian", "variations": 3},
+            },
+        )
+        assert resp.status_code == 401
+
+    def test_submit_task_requires_staff_role(self, client):
+        register_user(client, "_customerboss")
+        headers = get_auth_headers(client, "_customerboss")
+        resp = client.post(
+            "/api/boss/submit",
+            json={
+                "agent_id": "02",
+                "task_type": "design_concept",
+                "description": "Logo designs for Egyptian collection",
+                "payload": {"culture": "Egyptian", "variations": 3},
+            },
+            headers=headers,
+        )
+        assert resp.status_code == 403
 
     def test_approve_task(self, client):
         task_id = self._submit_task(client).json()["id"]
@@ -483,10 +519,34 @@ class TestBossAgent:
         assert resp.status_code == 200
         assert "result" in resp.json()
 
+    def test_approved_task_stays_approved_without_worker(self, client):
+        task_id = self._submit_task(client).json()["id"]
+        client.post(
+            f"/api/boss/review/{task_id}",
+            json={"decision": "APPROVED: Waiting for manual execution"},
+            headers=self.admin_h,
+        )
+        time.sleep(0.1)
+        resp = client.get(f"/api/boss/task/{task_id}", headers=self.admin_h)
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "approved"
+
     def test_execute_unapproved_task_fails(self, client):
         task_id = self._submit_task(client).json()["id"]
         resp = client.post(f"/api/boss/execute/{task_id}", headers=self.admin_h)
         assert resp.status_code == 400
+
+    def test_execute_task_only_once(self, client):
+        task_id = self._submit_task(client).json()["id"]
+        client.post(
+            f"/api/boss/review/{task_id}",
+            json={"decision": "APPROVED: Great work"},
+            headers=self.admin_h,
+        )
+        first = client.post(f"/api/boss/execute/{task_id}", headers=self.admin_h)
+        second = client.post(f"/api/boss/execute/{task_id}", headers=self.admin_h)
+        assert first.status_code == 200
+        assert second.status_code == 409
 
     def test_review_requires_admin(self, client):
         task_id = self._submit_task(client).json()["id"]

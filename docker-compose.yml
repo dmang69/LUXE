@@ -25,9 +25,10 @@ services:
       ENV: production
       PORT: 8000
       DATABASE_URL: ******db:5432/luxe_collective
-      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      SECRET_KEY: ${SECRET_KEY}
       ACCESS_TOKEN_EXPIRE_MINUTES: 60
-      CORS_ORIGINS: "*"
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      ENABLE_TASK_WORKER: "true"
     ports:
       - "8000:8000"
     depends_on:

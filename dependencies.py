@@ -24,7 +24,11 @@ def get_current_user(
     user_id: int = payload.get("sub")
     if user_id is None:
         raise credentials_exception
-    user = db.query(models.User).filter(models.User.id == int(user_id)).first()
+    try:
+        parsed_user_id = int(user_id)
+    except (TypeError, ValueError) as exc:
+        raise credentials_exception from exc
+    user = db.query(models.User).filter(models.User.id == parsed_user_id).first()
     if user is None or not user.is_active:
         raise credentials_exception
     return user
@@ -35,5 +39,14 @@ def require_admin(current_user: models.User = Depends(get_current_user)) -> mode
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
+        )
+    return current_user
+
+
+def require_staff_user(current_user: models.User = Depends(get_current_user)) -> models.User:
+    if current_user.role not in {"admin", "vendor"}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Staff access required",
         )
     return current_user

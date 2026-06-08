@@ -1,7 +1,7 @@
-import asyncio
 import json
 import logging
-from datetime import datetime
+import asyncio
+from datetime import UTC, datetime
 from typing import Callable, Dict
 
 from sqlalchemy.orm import Session
@@ -10,6 +10,10 @@ import models
 from boss_agent_service import boss_agent_service
 
 logger = logging.getLogger(__name__)
+
+
+def _utcnow() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 class TaskExecutor:
@@ -38,16 +42,13 @@ class TaskExecutor:
     async def _process_approved_tasks(self) -> None:
         db = self.db_session_factory()
         try:
-            approved = (
-                db.query(models.AgentTask)
-                .filter(models.AgentTask.status == "approved")
-                .all()
-            )
-            for task in approved:
+            for task_id in boss_agent_service.get_approved_task_ids(db):
+                task = boss_agent_service.claim_task_for_execution(db, task_id)
+                if not task:
+                    continue
                 logger.info("Executing task %d (agent %s)", task.id, task.agent_id)
-                boss_agent_service.mark_task_executing(db, task.id)
                 try:
-                    result = self._execute(task)
+                    result = self.execute_task(task)
                     boss_agent_service.complete_task(db, task.id, True, result)
                     logger.info("Task %d completed", task.id)
                 except Exception as exc:
@@ -60,17 +61,19 @@ class TaskExecutor:
     # Execution routing
     # ------------------------------------------------------------------
 
-    def _execute(self, task: models.AgentTask) -> Dict:
-        payload = json.loads(task.payload)
-        handler = self._get_handler(task.agent_id, task.task_type)
+    @classmethod
+    def execute_task(cls, task: models.AgentTask) -> Dict:
+        payload = json.loads(task.payload) if isinstance(task.payload, str) else task.payload
+        handler = cls._get_handler(task.agent_id, task.task_type)
         return handler(task, payload)
 
-    def _get_handler(self, agent_id: str, task_type: str):
+    @staticmethod
+    def _get_handler(agent_id: str, task_type: str):
         handlers = {
-            ("02", "design_concept"): self._handle_logo_design,
-            ("03", "design_concept"): self._handle_graphic_design,
+            ("02", "design_concept"): TaskExecutor._handle_logo_design,
+            ("03", "design_concept"): TaskExecutor._handle_graphic_design,
         }
-        return handlers.get((agent_id, task_type), self._handle_generic)
+        return handlers.get((agent_id, task_type), TaskExecutor._handle_generic)
 
     @staticmethod
     def _handle_logo_design(task: models.AgentTask, payload: dict) -> Dict:
@@ -78,7 +81,7 @@ class TaskExecutor:
             "logo_variations": payload.get("variations", []),
             "style_guide": payload.get("style_guide", {}),
             "production_ready": True,
-            "completed_at": datetime.utcnow().isoformat(),
+            "completed_at": _utcnow().isoformat(),
         }
 
     @staticmethod
@@ -87,7 +90,7 @@ class TaskExecutor:
             "collection_designs": payload.get("designs", []),
             "production_notes": payload.get("production_notes", []),
             "print_ready_files": True,
-            "completed_at": datetime.utcnow().isoformat(),
+            "completed_at": _utcnow().isoformat(),
         }
 
     @staticmethod
@@ -95,5 +98,5 @@ class TaskExecutor:
         return {
             "message": f"Executed {task.task_type} for agent {task.agent_id}",
             "payload": payload,
-            "completed_at": datetime.utcnow().isoformat(),
+            "completed_at": _utcnow().isoformat(),
         }
