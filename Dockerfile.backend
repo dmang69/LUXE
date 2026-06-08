@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir fastapi uvicorn[standard] sqlalchemy pydantic \
+    pydantic-settings python-jose[cryptography] passlib[bcrypt] python-multipart \
+    httpx anyio prometheus-fastapi-instrumentator
+
+COPY backend/ ./backend/
+COPY assets/ ./assets/
+
+ENV LOCAL_ASSET_DIR=/data/assets
+EXPOSE 8000
+
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
