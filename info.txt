@@ -1,0 +1,73 @@
+LUXE COLLECTIVE PLATFORM – DOCKER ENVIRONMENT SETUP HELPER
+===========================================================
+
+IMPORTANT LEGAL AND TECHNICAL NOTICE
+--------------------------------------
+
+THIS IS NOT A TRADITIONAL SOFTWARE INSTALLER.
+
+This tool ONLY prepares your Windows machine to run the Luxe Collective
+platform via Docker containers. It does NOT:
+
+  - Install the platform as a native Windows application
+  - Bundle databases, AI models, or dependencies into an EXE
+  - Run as a background service on your host OS
+  - Work without Docker Desktop installed
+  - Replace proper production deployment (Kubernetes / cloud)
+
+WHAT THIS TOOL DOES:
+  - Checks for / helps install Docker Desktop
+  - Builds the Luxe Collective Docker images from source
+  - Creates one-click start / stop shortcuts for local demo
+  - Isolates the platform from your host system (safe for your machine)
+
+REQUIREMENTS:
+  1. Administrator rights (to install Docker Desktop if needed)
+  2. Internet connection (for Docker image layers on first build)
+  3. ~3 GB free disk space
+  4. [Optional] Google Gemini API key for real AI generation
+     Free tier: https://aistudio.google.com/app/apikey
+
+QUICK START:
+  1. Install Docker Desktop if not already installed:
+     https://www.docker.com/products/docker-desktop/
+  2. Double-click "start-luxe.bat" (right-click → Run as administrator
+     only needed if Docker install is required)
+  3. On first run, .env.template is copied to .env — review the settings
+  4. Wait for images to build and services to start (~1–3 minutes)
+  5. Access the platform:
+       API Docs  : http://localhost:8000/docs
+       Dashboard : http://localhost:8501
+  6. To stop: press Ctrl+C in the start-luxe.bat window, or run stop-luxe.bat
+
+ENABLING REAL AI GENERATION (OPTIONAL):
+  By default the platform runs in mock mode (USE_MOCK_AI=true) which
+  produces instant results using template responses — no API key needed.
+
+  To enable genuine Google Gemini AI generation:
+    1. Get a free API key: https://aistudio.google.com/app/apikey
+    2. Open .env in a text editor
+    3. Set:  USE_MOCK_AI=false
+    4. Set:  GENAI_API_KEY=<your key here>
+    5. Restart with start-luxe.bat
+
+SECURITY WARNINGS:
+  - NEVER use this with real customer data or production API keys
+  - The .env file contains sensitive credentials — keep it secure
+  - Do NOT commit .env to version control
+  - This tool does not provide enterprise-grade security features
+  - This is for LOCAL DEMONSTRATION AND DEVELOPMENT ONLY
+
+LIMITATIONS:
+  - Single-user local demo; not suitable for multi-user production use
+  - No HTTPS/TLS (plain HTTP for local demo only)
+  - Performance limited by host machine resources
+  - Data persists in Docker volume pgdata between sessions
+  - No automatic updates — pull latest code and rebuild to get updates
+
+SUPPORT:
+  Full documentation and source code:
+    https://github.com/dmang69/LUXE
+
+BY PROCEEDING WITH INSTALLATION, YOU ACKNOWLEDGE THAT YOU HAVE READ
+AND UNDERSTOOD THE ABOVE LIMITATIONS AND WARNINGS.
