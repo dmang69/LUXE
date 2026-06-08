@@ -1,4 +1,5 @@
 @echo off
+setlocal EnableExtensions EnableDelayedExpansion
 title Luxe Collective Demo - Starting...
 cls
 echo.
@@ -19,8 +20,11 @@ echo Checking .env file...
 if not exist .env (
   echo Creating .env from template...
   copy NUL .env >nul
+  set "GENERATED_SECRET="
+  for /f %%i in ('powershell -NoProfile -Command "[guid]::NewGuid().ToString('N')" 2^>nul') do set "GENERATED_SECRET=%%i"
+  if "!GENERATED_SECRET!"=="" set "GENERATED_SECRET=change-me-local-demo-only"
   echo DATABASE_URL=postgresql://luxe:luxe_secret@db:5432/luxe_collective > .env
-  echo SECRET_KEY=change-me-local-demo-only >> .env
+  echo SECRET_KEY=!GENERATED_SECRET! >> .env
   echo ALGORITHM=HS256 >> .env
   echo ACCESS_TOKEN_EXPIRE_MINUTES=30 >> .env
   echo GENAI_API_KEY= >> .env
