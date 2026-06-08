@@ -23,5 +23,5 @@ def get_db():
 
 
 def init_db():
-    from models import Base as ModelBase  # noqa: F401 – triggers import of all models
-    ModelBase.metadata.create_all(bind=engine)
+    import models  # noqa: F401 – registers model classes with Base metadata
+    Base.metadata.create_all(bind=engine)

@@ -18,8 +18,14 @@ Submit Brief → Agent 01 (Boss) → Agent 02 (Logo) → Agent 03 (Graphic) → 
 git clone https://github.com/dmang69/LUXE.git
 cd LUXE
 cp .env.template .env
-# Edit .env if you want real AI generation (optional – mock mode works out of the box)
+# Edit .env – at minimum update POSTGRES_PASSWORD and the DATABASE_URL password
+# (for a quick local demo the defaults work out of the box)
+# Edit USE_MOCK_AI and GENAI_API_KEY if you want real AI generation (optional)
 ```
+
+> **Local dev defaults:** `docker-compose.yml` ships with fallback credentials
+> (`luxe` / `luxe_secret`) so the stack starts immediately without a `.env` file.
+> For anything beyond a private local demo, always set your own credentials in `.env`.
 
 ### 2. Start the platform
 
@@ -106,7 +112,7 @@ LUXE/
 ├── api/
 │   ├── main.py              # FastAPI app entry point
 │   ├── models.py            # SQLAlchemy models (Task, AgentResult, TaskLog)
-│   ├── schemas.py           # Pydantic schemas
+│   ├── schemas.py           # Pydantic schemas (validation: style_description ≥ 20 chars)
 │   ├── database.py          # DB connection + session
 │   ├── requirements.txt
 │   ├── agents/
@@ -114,9 +120,14 @@ LUXE/
 │   │   ├── logo_agent.py    # Agent 02 – logo concept
 │   │   ├── graphic_agent.py # Agent 03 – garment graphic spec
 │   │   └── print_agent.py   # Agent 05 – vendor sourcing
-│   └── routers/
-│       └── tasks.py         # REST routes + pipeline orchestration
+│   ├── routers/
+│   │   ├── tasks.py         # REST route definitions
+│   │   └── pipeline.py      # Multi-agent pipeline orchestration
+│   └── tests/
+│       ├── test_validation.py  # Schema validation tests
+│       └── test_boss_agent.py  # Boss Agent gate tests
 ├── dashboard.py             # Streamlit 4-screen dashboard
+├── dashboard_helpers.py     # API client helpers and UI constants
 ├── requirements-dashboard.txt
 ├── Dockerfile.api
 ├── Dockerfile.dashboard
@@ -126,6 +137,13 @@ LUXE/
 ├── stop-luxe.bat            # Windows stop script
 ├── LuxeCollectiveLauncher.iss # Inno Setup installer script
 └── info.txt                 # Pre-install disclaimer
+```
+
+## 🧪 Running Tests
+
+```bash
+cd api
+DATABASE_URL=sqlite:///./test.db USE_MOCK_AI=true python -m pytest tests/ -v
 ```
 
 ## ⚠️ Disclaimer

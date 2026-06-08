@@ -9,7 +9,7 @@ class TaskCreate(BaseModel):
     title: str = Field(..., min_length=3, max_length=255)
     brand_name: str = Field(..., min_length=1, max_length=255)
     product_type: str = Field(..., min_length=1, max_length=255)
-    style_description: str = Field(..., min_length=10)
+    style_description: str = Field(..., min_length=20)
     quantity: int = Field(default=100, ge=1, le=100_000)
     budget_usd: int = Field(default=500, ge=50, le=1_000_000)
 
