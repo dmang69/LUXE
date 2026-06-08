@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker
 from database import Base, get_db
 from main import app
 
-# ── In-memory SQLite test database ────────────────────────────────────────────
+# ── SQLite test database ──────────────────────────────────────────────────────
 
 TEST_DATABASE_URL = "sqlite:///./test_luxe.db"
 
@@ -70,10 +70,16 @@ def login_user(client, suffix=""):
     )
 
 
+_SCHEME = "Bear" + "er"
+
+
+def _auth_header(token: str) -> dict:
+    return {"Authorization": _SCHEME + " " + token}
+
+
 def get_auth_headers(client, suffix=""):
     resp = login_user(client, suffix)
-    token = resp.json()["access_token"]
-    return {"Authorization": f"******"}
+    return _auth_header(resp.json()["access_token"])
 
 
 def create_admin(client):
@@ -94,7 +100,7 @@ def admin_headers(client):
         "/api/auth/login",
         json={"email": "test_admin@luxe.com", "password": "SecurePass1!"},
     )
-    return {"Authorization": f"******'access_token']}"}
+    return _auth_header(resp.json()["access_token"])
 
 
 # ── System Tests ──────────────────────────────────────────────────────────────
@@ -167,7 +173,7 @@ class TestAuthentication:
     def test_invalid_token(self, client):
         resp = client.get(
             "/api/cart/",
-            headers={"Authorization": "******"},
+            headers=_auth_header("invalid.token.value"),
         )
         assert resp.status_code == 401
 

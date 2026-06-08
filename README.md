@@ -174,7 +174,7 @@ curl -X POST http://localhost:8000/api/auth/login \
 # Browse products
 curl "http://localhost:8000/api/products/?category=Formalwear&limit=20"
 
-# Add to cart (requires ******
+# Add to cart (requires a valid JWT token from the login response)
 curl -X POST http://localhost:8000/api/cart/items \
   -H "Authorization: ******" \
   -H "Content-Type: application/json" \
