@@ -28,7 +28,7 @@ if not exist .env (
   echo CORS_ORIGINS=http://localhost:8501,http://127.0.0.1:8501 >> .env
   echo ALLOWED_HOSTS=localhost,127.0.0.1,api >> .env
   echo.
-  echo .env created. PLEASE EDIT IT NOW TO ADD YOUR GEMINI API KEY!
+  echo .env created. PLEASE EDIT IT NOW TO ADD YOUR GENAI_API_KEY!
   echo.
   notepad .env
   echo.
@@ -49,6 +49,6 @@ echo.
 echo IMPORTANT:
 echo - Keep THIS WINDOW OPEN to keep services running
 echo - Use Ctrl+C in this window or run stop-demo.bat to stop the demo cleanly
-echo - First startup: 60-90 seconds (pulls images)
+echo - First startup: 60-90 seconds (image pull + container initialization)
 echo.
 docker compose up
