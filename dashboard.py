@@ -412,9 +412,9 @@ def screen_sales():
     st.subheader("📊 Additional KPIs")
     if sales_summary:
         kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-        kpi1.metric("Return Rate",       "2.1%",  "-0.3%")
-        kpi2.metric("Avg. Order Value",  f"${sales_summary.get('aov', 0):.2f}", "+$4.80")
-        kpi3.metric("CAC",               f"${sales_summary.get('cav', 0):.2f}", "-$1.20")
+        kpi1.metric("Return Rate",    "2.1%",  "-0.3%")   # placeholder: add to sales endpoint when return data is tracked
+        kpi2.metric("Avg. Order Value",  f"${sales_summary.get('aov', 0):.2f}")
+        kpi3.metric("CAC",               f"${sales_summary.get('cac', 0):.2f}")   # populated when ad-spend data is available
         kpi4.metric(
             "Inventory Value",
             f"${sales_summary.get('inventory_value', 0):,.0f}",

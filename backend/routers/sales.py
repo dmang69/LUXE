@@ -79,7 +79,8 @@ def sales_summary(
         "aov":               round(aov, 2),
         "unique_customers":  int(unique_customers),
         "inventory_value":   round(float(inventory_value), 2),
-        "cav":               round(0.0, 2),   # placeholder – requires ad-spend data
+        "cav":               round(0.0, 2),   # placeholder – requires ad-spend data; key kept for backwards compat
+        "cac":               round(0.0, 2),   # alias used by dashboard
         "turnover":          round(0.0, 1),   # placeholder – requires COGS data
     }
 

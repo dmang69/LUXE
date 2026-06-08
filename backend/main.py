@@ -92,8 +92,8 @@ def _seed_demo_data():
 
         # Generate 90 days of orders
         now = datetime.utcnow()
-        for d in range(90):
-            day   = now - timedelta(days=d)
+        for day_offset in range(90):
+            day   = now - timedelta(days=day_offset)
             count = random.randint(1, 8)
             for _ in range(count):
                 order = models.Order(
