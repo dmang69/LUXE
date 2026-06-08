@@ -99,7 +99,7 @@ begin
         'Would you like to open the Docker Desktop download page now?',
         mbConfirmation, MB_YESNO) = IDYES then
       begin
-        ShellExec('open', 'https://www.docker.com/products/docker-desktop/', '', '', SW_SHOWNORMAL, ewNoWait, 0);
+        ShellExec('', 'https://www.docker.com/products/docker-desktop/', '', '', SW_SHOWNORMAL, ewNoWait, 0);
       end;
     end;
   end;

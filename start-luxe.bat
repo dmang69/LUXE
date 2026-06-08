@@ -69,7 +69,7 @@ echo  Once started:
 echo    API Docs   : http://localhost:8000/docs
 echo    Dashboard  : http://localhost:8501
 echo.
-echo  First startup pulls images and initialises the database (~1-3 min).
+echo  First startup pulls images and initializes the database (~1-3 min).
 echo  Press Ctrl+C to stop all services.
 echo.
 

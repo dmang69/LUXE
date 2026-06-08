@@ -346,9 +346,17 @@ elif screen == "🔍 Task Detail":
                                     colours = parsed.get("color_palette", [])
                                     names = parsed.get("color_names", [])
                                     for hex_c, name in zip(colours, names):
+                                        # Determine text colour by perceived luminance
+                                        try:
+                                            h = hex_c.lstrip("#")
+                                            r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+                                            luminance = 0.299 * r + 0.587 * g + 0.114 * b
+                                            text_colour = "#fff" if luminance < 128 else "#000"
+                                        except (ValueError, IndexError):
+                                            text_colour = "#000"
                                         st.markdown(
                                             f'<div style="background:{hex_c};padding:8px 12px;'
-                                            f'border-radius:6px;color:{"#fff" if hex_c < "#888888" else "#000"};'
+                                            f'border-radius:6px;color:{text_colour};'
                                             f'margin-bottom:4px;font-size:0.8rem;">'
                                             f'{name}<br><code>{hex_c}</code></div>',
                                             unsafe_allow_html=True,

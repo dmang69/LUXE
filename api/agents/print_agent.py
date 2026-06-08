@@ -50,7 +50,7 @@ VENDORS = [
         "turnaround_days": 14,
         "quality_rating": 4.9,
         "sustainability_certified": True,
-        "notes": "GOTS certified. Specialises in premium embroidery. Ships EU/UK duty-free.",
+        "notes": "GOTS certified. Specializes in premium embroidery. Ships EU/UK duty-free.",
     },
     {
         "vendor_id": "V004",
@@ -128,7 +128,7 @@ def run(task_data: dict, graphic_spec: dict) -> dict:
     for q in quotes:
         cost_score = 1 - (q["total_cost_usd"] / max_cost)
         speed_score = 1 - (q["turnaround_days"] / max_days)
-        quality_score = (q["quality_rating"] - 4.0) / 1.0  # normalise 4.0–5.0 → 0–1
+        quality_score = (q["quality_rating"] - 4.0) / 1.0  # normalize 4.0–5.0 → 0–1
         q["score"] = round(
             quality_score * 0.4 + cost_score * 0.4 + speed_score * 0.2, 3
         )

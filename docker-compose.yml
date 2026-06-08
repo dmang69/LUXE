@@ -5,15 +5,15 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: luxe
-      POSTGRES_PASSWORD: luxe_secret
-      POSTGRES_DB: luxe_collective
+      POSTGRES_USER: ${POSTGRES_USER:-luxe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-luxe_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-luxe_collective}
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "luxe"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-luxe}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -25,8 +25,6 @@ services:
       dockerfile: Dockerfile.api
     env_file:
       - .env
-    environment:
-      - DATABASE_URL=******db:5432/luxe_collective
     depends_on:
       db:
         condition: service_healthy
