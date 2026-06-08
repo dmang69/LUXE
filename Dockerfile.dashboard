@@ -6,6 +6,7 @@ COPY requirements-dashboard.txt .
 RUN pip install --no-cache-dir -r requirements-dashboard.txt
 
 COPY dashboard.py .
+COPY dashboard_helpers.py .
 
 EXPOSE 8501
 
