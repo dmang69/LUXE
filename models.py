@@ -145,3 +145,46 @@ class UserPreference(Base):
 
     # Relationships
     user = relationship("User", back_populates="preferences")
+
+
+class AgentTask(Base):
+    """Tracks tasks submitted by specialized agents awaiting Boss Agent review."""
+    __tablename__ = "agent_tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    agent_id = Column(String, index=True, nullable=False)       # e.g. "02", "03"
+    task_type = Column(String, index=True, nullable=False)      # "logo_design", "graphic_design", etc.
+    description = Column(Text, nullable=False)
+    payload = Column(Text, nullable=True)                        # JSON string
+    status = Column(String, default="pending", index=True)       # pending | approved | rejected
+    submitted_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    boss_feedback = Column(Text, nullable=True)
+
+    # Relationships
+    design_asset = relationship("DesignAsset", back_populates="task", uselist=False)
+
+
+class DesignAsset(Base):
+    """Stores the final design output once a task is approved & executed."""
+    __tablename__ = "design_assets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("agent_tasks.id"), nullable=False, unique=True)
+    asset_type = Column(String, nullable=False)   # "logo", "graphic", "accessory", etc.
+    asset_data = Column(Text, nullable=False)     # JSON string with image URLs, specs, etc.
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationship back to the task
+    task = relationship("AgentTask", back_populates="design_asset")
+
+
+class ActivityLog(Base):
+    """Simple activity feed for the real-time agent stream."""
+    __tablename__ = "activity_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    agent_id = Column(String, index=True, nullable=False)   # e.g. "02"
+    action = Column(String, nullable=False)                 # human-readable description
+    metadata = Column(Text, nullable=True)                  # optional JSON extra info
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)

@@ -28,8 +28,11 @@ async def lifespan(app: FastAPI):
     # Create database tables on startup
     from database import Base, engine
     from models import (  # noqa: F401 – ensure models are registered
+        ActivityLog,
+        AgentTask,
         Cart,
         CartItem,
+        DesignAsset,
         Order,
         OrderItem,
         Product,
@@ -341,6 +344,16 @@ def get_order(
 @app.get("/health", tags=["Health"])
 def health():
     return {"status": "ok", "service": "LUXE COLLECTIVE API"}
+
+
+# ─── Extended Routers ─────────────────────────────────────────────────────────
+
+from routes import activity_router, boss_router, design_router, sales_router  # noqa: E402
+
+app.include_router(boss_router)
+app.include_router(design_router)
+app.include_router(sales_router)
+app.include_router(activity_router)
 
 
 if __name__ == "__main__":
