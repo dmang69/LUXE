@@ -43,12 +43,12 @@ docker compose pull
 echo.
 echo Starting Luxe Collective Platform...
 echo.
-echo 👉 API Docs: http://localhost:8000/docs
-echo 👉 Dashboard: http://localhost:8501
+echo API Docs: http://localhost:8000/docs
+echo Dashboard: http://localhost:8501
 echo.
 echo IMPORTANT:
 echo - Keep THIS WINDOW OPEN to keep services running
-echo - Close this window to stop the demo
+echo - Use Ctrl+C in this window or run stop-demo.bat to stop the demo cleanly
 echo - First startup: 60-90 seconds (pulls images)
 echo.
 docker compose up
