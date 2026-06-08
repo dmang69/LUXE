@@ -28,8 +28,8 @@ if not exist .env (
   echo CORS_ORIGINS=http://localhost:8501,http://127.0.0.1:8501 >> .env
   echo ALLOWED_HOSTS=localhost,127.0.0.1,api >> .env
   echo.
-  echo .env created. PLEASE EDIT IT NOW TO ADD YOUR GENAI_API_KEY!
-  echo NOTE: Demo defaults are for local use only. Update DATABASE_URL and SECRET_KEY for non-local usage.
+  echo .env created. PLEASE EDIT IT NOW TO ADD YOUR GenAI API key ^(GENAI_API_KEY^)!
+  echo WARNING: DEMO DEFAULTS ARE LOCAL-ONLY. CHANGE DATABASE_URL AND SECRET_KEY BEFORE ANY NON-LOCAL USE.
   echo.
   notepad .env
   echo.
